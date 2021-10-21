@@ -1,0 +1,27 @@
+Edges:
+s c 1
+s b 2
+s d 2
+b e 3
+b k 1
+c h 6
+d h 2
+d i 10
+e g 6
+k g 9
+k h 1
+h j 7
+h i 3
+i j 7
+j g 3
+Estimations:
+s 9
+b 5
+c 2
+d 4
+e 5
+k 2
+h 5
+i 2
+g 0
+j 6
