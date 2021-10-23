@@ -1,5 +1,5 @@
 import sys
-
+import copy
 class Node():
     def __init__(self, name, parent=None, estimation=0., time_added=0, path_distance=0.):
         self.name = name
@@ -12,7 +12,15 @@ class Node():
         return isinstance(other, Node) and self.name == other.name
 
     def __hash__(self):
-        return hash(self.name)
+        curr = copy.deepcopy(self)
+        path=self.name
+        if curr.parent:
+            curr = curr.parent
+            while curr.parent:
+                path+=curr.name
+                curr = curr.parent
+            path += 's'
+        return hash(path)
     
     def __str__(self):
         if self.parent:
@@ -28,15 +36,15 @@ class Node():
         if curr.name=='s':
             pass
         else:
-            if edges and edges.get(curr.parent).get(curr):
-                print(f"(<-{edges[curr.parent][curr]}<-", end='')
+            if edges and edges.get(curr.parent.name).get(curr.name):
+                print(f"(<-{edges[curr.parent.name][curr.name]}<-", end='')
             else:
                 print(f"(<-", end='')
             curr = curr.parent
             while curr.name != 's':
 
-                if edges and edges.get(curr.parent).get(curr):
-                    print(f"{curr.name}({curr.estimation})", f"<-{edges[curr.parent][curr]}-", end='', sep='')
+                if edges and edges.get(curr.parent.name).get(curr.name):
+                    print(f"{curr.name}({curr.estimation})", f"<-{edges[curr.parent.name][curr.name]}-", end='', sep='')
                 else:
                     print(f"{curr.name}({curr.estimation})", "<-", end='', sep='')
 
@@ -49,11 +57,11 @@ class Graph():
         self.nodes = dict()
     
     def add_edge(self, u, v, weight):
-        if self.edges.get(u):
-            self.edges[u][v] = float(weight)    
+        if self.edges.get(u.name):
+            self.edges[u.name][v.name] = float(weight)    
         else:
-            self.edges[u] = dict()
-            self.edges[u][v] = float(weight)    
+            self.edges[u.name] = dict()
+            self.edges[u.name][v.name] = float(weight)    
 
     def add_node(self, u):
         if u not in self.nodes:
@@ -62,9 +70,9 @@ class Graph():
 
     def get_children(self, u):
         children = set()
-        if self.edges.get(u):
-            for v in self.edges[u]:
-                children.add(v)
+        if self.edges.get(u.name):
+            for v in self.edges[u.name]:
+                children.add(self.nodes[v])
         return children
     
     def read_from_file(self, filename):
@@ -97,9 +105,9 @@ class Graph():
         print("Current Graph state:")
         for u in self.nodes:
             node = self.nodes[u]
-            if self.edges.get(node):
-                for v in self.edges[node]:
-                    print(f"{node} -> {v} : {self.edges[node][v]} ")
+            if self.edges.get(node.name):
+                for v in self.edges[node.name]:
+                    print(f"{node} -> {v} : {self.edges[node.name][v.name]} ")
 
 class Frontier():
     def __init__(self):
@@ -140,11 +148,14 @@ def hill_climbing_main(graph):
     * the method `hill_climbing_logs` prints the diagnostic messages
     '''
     visited = set()
-    
+    total_cost = 0
+
     def hill_climbing_iter(best_node):
+        nonlocal total_cost
         print('--------------------------------------------------')
         if (best_node.name=='g'):
             print("I found the goal.")
+            print("With total cost: ", total_cost)
             return
         # pick the best child node, if there is one better than current
         prev = best_node
@@ -159,6 +170,7 @@ def hill_climbing_main(graph):
         hill_climbing_logs(prev, best_node, children)
 
         if best_node != prev:
+            total_cost += graph.edges[prev.name][best_node.name]
             hill_climbing_iter(best_node)
         else:
             # local minimum, stuck...
@@ -174,6 +186,7 @@ def hill_climbing_main(graph):
             print("Children:", [str(child) for child in children], "\nNo better children, no next state from", str(prev))
             print('--------------------------------------------------')
             print("Could not reach goal, local minimum at:", str(prev))
+            print("With total cost: ", total_cost)
 
     print("I am hill climbing, in fact I do not use a frontier, so you will not find a frontier on my table:")
     hill_climbing_iter(graph.nodes.get('s'))
@@ -202,7 +215,11 @@ def best_first(graph):
         print('-----------------------------------------')
         print("Found goal 'g', with path:")
         curr.print_with_path()
-        print()
+        total_cost = 0
+        while curr.parent:
+            total_cost += graph.edges[curr.parent.name][curr.name]
+            curr = curr.parent
+        print('Total cost:', total_cost)
 
     
     frontier = Frontier()
@@ -262,7 +279,11 @@ def Astar(graph):
         print('-----------------------------------------')
         print("Found goal 'g', with path:")
         curr.print_with_path()
-        print()
+        total_cost = 0
+        while curr.parent:
+            total_cost += graph.edges[curr.parent.name][curr.name]
+            curr = curr.parent
+        print('Total cost:', total_cost)
 
     frontier = Frontier()
     
@@ -277,6 +298,10 @@ def Astar(graph):
         # pop and test...
         curr = frontier.pop()
         if curr in expanded:
+            print(f"Current:", end=' ')
+            curr.print_with_path()
+            print('\n', end='')
+            print("I have already seen that")
             continue
         elif curr.name=='g':
             A_Star_log_goal(curr)
@@ -286,7 +311,7 @@ def Astar(graph):
         time += 1
         children = graph.get_children(curr)
         for child in children:
-            path_distance = curr.path_distance + graph.edges[curr][child]
+            path_distance = curr.path_distance + graph.edges[curr.name][child.name]
             
             # if the node is already in the frontier with a worse value, remove it and add the new one
             # if the node is already in the frontier with a better value, do not add the new one (prunning)
@@ -294,11 +319,11 @@ def Astar(graph):
             for node in frontier.frontier:
                 if node.name==child.name and float(node.estimation)+node.path_distance>float(child.estimation)+path_distance:
                     frontier.frontier.remove(node)
-                if node.name==child.name and float(node.estimation)+node.path_distance>float(child.estimation)+path_distance:
+                if node.name==child.name and float(node.estimation)+node.path_distance<float(child.estimation)+path_distance:
                     added_with_better_distance = True
                     break
             if not added_with_better_distance:
-                child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time)
+                child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time, path_distance=path_distance)
                 frontier.add(child_node)
             
         expanded.add(curr)
