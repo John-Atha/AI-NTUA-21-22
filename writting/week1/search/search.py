@@ -1,5 +1,6 @@
 import sys
 import copy
+
 class Node():
     def __init__(self, name, parent=None, estimation=0., time_added=0, path_distance=0.):
         self.name = name
@@ -333,6 +334,50 @@ def Astar(graph):
 
         A_star_logs(curr, expanded, children, frontier)
 
+def all_paths(graph):
+
+    def build_path(curr):
+        path = ''
+        cost = 0
+        while curr.parent:
+            path += f"{curr.name} <- "
+            cost += graph.edges.get(curr.parent.name).get(curr.name)
+            curr = curr.parent
+        path += 's'
+        path += f" with cost: {cost}"
+        return path
+
+    paths = set()
+
+    frontier = Frontier()
+    expanded = set()
+
+    curr = graph.nodes.get('s')
+    frontier.add(curr)
+
+    while not frontier.empty():
+        curr = frontier.pop()
+        if curr.name == 'g':
+            print("Found goal")
+            path = build_path(curr)
+            paths.add(path)
+            continue
+        if curr in expanded:
+            continue
+            
+        children = graph.get_children(curr)
+        for child in children:
+            child_node = Node(name=child.name, estimation=child.estimation, parent=curr)
+            frontier.add(child_node)
+        
+        expanded.add(curr)
+
+    print("DFS is over")
+    print("Total paths found:", len(paths))
+    for path in paths:
+        print(path)
+
+
 def solve():
     '''
     * main def
@@ -344,13 +389,15 @@ def solve():
         sys.exit('Usage: python3 search.py <filename>') 
     graph.read_from_file(sys.argv[1])
     #graph.print()
-    way = int(input('Which algorithm would you like to use (1, 2 or 3)?\n  1.Hill Climbing\n  2.Best First\n  3.A*\n'))
+    way = int(input('Which algorithm would you like to use (1, 2, 3 or 4)?\n  1.Hill Climbing\n  2.Best First\n  3.A*\n  4.DFS to count all paths from \'s\' to \'g\'\n'))
     if way==1:
         hill_climbing_main(graph)
     elif way==2:
         best_first(graph)
     elif way==3:
         Astar(graph)
+    elif way==4:
+        all_paths(graph)
     else:
         print(f"Invalid way '{way}'\nJust type the corresponding number.")
 
