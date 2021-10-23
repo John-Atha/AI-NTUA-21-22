@@ -1,11 +1,12 @@
 import sys
 
 class Node():
-    def __init__(self, name, parent=None, estimation=0, time_added=0):
+    def __init__(self, name, parent=None, estimation=0, time_added=0, path_distance=0):
         self.name = name
         self.parent = parent
         self.estimation = estimation
         self.time_added = time_added
+        self.path_distance = path_distance
     
     def __eq__(self, other):
         return isinstance(other, Node) and self.name == other.name
@@ -18,29 +19,30 @@ class Node():
             return f"{self.name}({self.estimation})<-{self.parent.name}({self.parent.estimation})"
         return f"{self.name}({self.estimation})"
 
-    def print_with_path(self):
+    def print_with_path(self, edges=dict()):
         curr = self
-        print(f"{curr.name}({curr.estimation})", end='')
+        if curr.path_distance:
+            print(f"{curr.name}({curr.estimation}, {curr.path_distance})", end='')
+        else:
+            print(f"{curr.name}({curr.estimation})", end='')
         if curr.name=='s':
             pass
         else:
+            if edges and edges.get(curr.parent).get(curr):
+                print(f"(<-{edges[curr.parent][curr]}<-", end='')
+            else:
+                print(f"(<-", end='')
             curr = curr.parent
-            print('( <-', end='')
             while curr.name != 's':
-                print(f"{curr.name}({curr.estimation})", '<-', end=' ')
-                curr = curr.parent
-            print(curr, end=' ), ')
 
-    '''
-    def __lt__(self, other):
-        if not isinstance(other, Node):
-            raise Exception("Second object is not of type Node.")
-        if not other.estimation:
-            return False
-        if not self.estimation:
-            return other
-        return self.estimation < other.estimation
-    '''
+                if edges and edges.get(curr.parent).get(curr):
+                    print(f"{curr.name}({curr.estimation})", f"<-{edges[curr.parent][curr]}-", end='', sep='')
+                else:
+                    print(f"{curr.name}({curr.estimation})", "<-", end='', sep='')
+
+                curr = curr.parent
+            print(curr, end='), ')
+
     
 class Graph():
     def __init__(self):
@@ -118,10 +120,13 @@ class Frontier():
     def __str__(self):
         return str([str(node) for node in self.frontier])
     
-    def print_with_paths(self):
-        print("Frontier:", end=' ')
+    def print_with_paths(self, edges=dict()):
+        print("Sorted frontier:", end=' ')
+        print()
         for node in self.frontier:
-            node.print_with_path()
+            print('\t', end='')
+            node.print_with_path(edges)
+            print()
         print()
 
 # by default, the init state has the label 's', and the goal state has the label 'g'
@@ -155,13 +160,13 @@ def hill_climbing_main(graph):
             return
     
     def hill_climbing_logs(prev, best_node, children):
-        print("Current:", prev, end='  ---  ')
-        print("Closed set:", visited, end='  ---  ')
+        print("Current:", prev, end='\n')
+        print("Closed set:", visited, end='\n')
         if best_node != prev:
-            print("Children:", [str(child) for child in children], end='  ---  ')
+            print("Children:", [str(child) for child in children], end='\n')
             print(f"I am going to {best_node}")
         else:
-            print("Children:", [str(child) for child in children], "  ---  No better children, no next state from", str(prev))
+            print("Children:", [str(child) for child in children], "\nNo better children, no next state from", str(prev))
             print('--------------------------------------------------')
             print("Could not reach goal, local minimum at:", str(prev))
 
@@ -175,8 +180,8 @@ def best_first(graph):
         print('-----------------------------------------')
         print(f"Current:", end=' ')
         curr.print_with_path()
-        print(' --- ', end='')
-        print("Closed set:", [str(node) for node in expanded], end=' --- ')
+        print('\n', end='')
+        print("Closed set:", [str(node) for node in expanded], end='\n')
         print("Children:", [str(node) for node in children], end='\n')
         frontier.print_with_paths()
 
@@ -221,6 +226,55 @@ def best_first(graph):
     print("Could not find solution.")
 
 
+def Astar(graph):
+
+    def AstarLogs(curr, expanded, children, frontier):
+        print('-----------------------------------------')
+        print(f"Current:", end=' ')
+        curr.print_with_path()
+        print('\n', end='')
+        print("Closed set:", [str(node) for node in expanded], end='\n')
+        print("Children:", [str(node) for node in children], end='\n')
+        frontier.print_with_paths(graph.edges)
+
+    def AstarLogGoal(curr):
+        print('-----------------------------------------')
+        print("Found goal 'g', with path:")
+        curr.print_with_path()
+        print()
+
+
+    frontier = Frontier()
+    
+    expanded = set()
+    time = 0
+
+    curr = graph.nodes.get('s')
+    frontier.add(curr)
+
+    while not frontier.empty():
+        
+        curr = frontier.pop()
+        if curr in expanded:
+            continue
+        elif curr.name=='g':
+            AstarLogGoal(curr)
+            return
+        
+        time += 1
+        children = graph.get_children(curr)
+        for child in children:
+            path_distance = curr.path_distance + float(graph.edges[curr][child])
+            child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time, path_distance=path_distance)
+            frontier.add(child_node)
+        
+        frontier.frontier.sort(key=lambda node: (float(node.estimation)+node.path_distance, node.time_added), reverse=True)
+
+        expanded.add(curr)
+
+        AstarLogs(curr, expanded, children, frontier)
+
+
 def solve():
     graph = Graph()
     if len(sys.argv)!=2:
@@ -233,7 +287,7 @@ def solve():
     elif way==2:
         best_first(graph)
     elif way==3:
-        pass
+        Astar(graph)
     else:
         print(f"Invalid way '{way}'\nJust type the corresponding number.")
 
