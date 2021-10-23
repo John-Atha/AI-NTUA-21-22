@@ -43,7 +43,6 @@ class Node():
                 curr = curr.parent
             print(curr, end='), ')
 
-    
 class Graph():
     def __init__(self):
         self.edges = dict()
@@ -129,10 +128,17 @@ class Frontier():
             print()
         print()
 
-# by default, the init state has the label 's', and the goal state has the label 'g'
-# we evaluate the next possible states only by the estimation value of the node
 def hill_climbing_main(graph):
-
+    '''
+    * input: a `Graph` object
+    * output: None
+    * prints a table describing the visited states
+    * by default, the init state has the label 's', and the goal state has the label 'g'
+    * we evaluate the next possible states only by the node.estimation value
+    * we do not keep a frontier, we just move on to a better child node, if there is one
+    * the recursive method `hill_climbing_iter` is used to traverse the nodes
+    * the method `hill_climbing_logs` prints the diagnostic messages
+    '''
     visited = set()
     
     def hill_climbing_iter(best_node):
@@ -140,13 +146,11 @@ def hill_climbing_main(graph):
         if (best_node.name=='g'):
             print("I found the goal.")
             return
-
+        # pick the best child node, if there is one better than current
         prev = best_node
         children = graph.get_children(best_node)
-
         if (len(children)):
             for child in children:
-                # if float(child.estimation) + float(graph.edges[prev][child]) < float(best_node.estimation):
                 if float(child.estimation) < float(best_node.estimation):
                     best_node = child
         
@@ -157,6 +161,7 @@ def hill_climbing_main(graph):
         if best_node != prev:
             hill_climbing_iter(best_node)
         else:
+            # local minimum, stuck...
             return
     
     def hill_climbing_logs(prev, best_node, children):
@@ -173,9 +178,17 @@ def hill_climbing_main(graph):
     print("I am hill climbing, in fact I do not use a frontier, so you will not find a frontier on my table:")
     hill_climbing_iter(graph.nodes.get('s'))
 
-
-# we evaluate the next possible states only by the estimation value of the node
 def best_first(graph):
+    '''
+    * input: a `Graph` object
+    * output: None
+    * prints a table describing the visited states
+    * by default, the init state has the label 's', and the goal state has the label 'g'
+    * we evaluate the next possible states only by the node.estimation value
+    * we do keep a frontier, expanded by the current node's children at each time, to traverse the nodes
+    * the methods `best_first_logs` and `best_first_log_goal` prints the diagnostic messages
+    * the `time` variable is used to solve ties between nodes
+    '''
     def best_first_logs(curr, frontier, children, expanded):
         print('-----------------------------------------')
         print(f"Current:", end=' ')
@@ -201,15 +214,15 @@ def best_first(graph):
     frontier.add(curr)
 
     while not frontier.empty():
-        
+        # pop and test...
         curr = frontier.pop()
-        
         if curr in expanded:
             continue
         if curr.name=='g':
             best_first_log_goal(curr)
             return
         
+        # expand...
         time += 1
         children = graph.get_children(curr)
         for child in children:
@@ -217,18 +230,27 @@ def best_first(graph):
             frontier.add(child_node)
         
         expanded.add(curr)
-        
-        #frontier.frontier.sort(key=lambda node: (node.estimation+node.parent.estimation+graph.edges[node.parent][node]), reverse=True)
+
+        # sort the frontier...
         frontier.frontier.sort(key=lambda node: (node.estimation, node.time_added), reverse=True)
         
         best_first_logs(curr, frontier, children, expanded)
 
     print("Could not find solution.")
 
-
 def Astar(graph):
+    '''
+    * input: a `Graph` object
+    * output: None
+    * prints a table describing the visited states
+    * by default, the init state has the label 's', and the goal state has the label 'g'
+    * we evaluate the next possible states by the `estimation` + `path cost till here` values
+    * we do keep a frontier, expanded by the current node's children at each time, to traverse the nodes
+    * the methods `A_star_logs` and `A_Star_log_goal` prints the diagnostic messages
+    * the `time` variable is used to solve ties between nodes
+    '''
 
-    def AstarLogs(curr, expanded, children, frontier):
+    def A_star_logs(curr, expanded, children, frontier):
         print('-----------------------------------------')
         print(f"Current:", end=' ')
         curr.print_with_path()
@@ -237,12 +259,11 @@ def Astar(graph):
         print("Children:", [str(node) for node in children], end='\n')
         frontier.print_with_paths(graph.edges)
 
-    def AstarLogGoal(curr):
+    def A_Star_log_goal(curr):
         print('-----------------------------------------')
         print("Found goal 'g', with path:")
         curr.print_with_path()
         print()
-
 
     frontier = Frontier()
     
@@ -254,28 +275,35 @@ def Astar(graph):
 
     while not frontier.empty():
         
+        # pop and test...
         curr = frontier.pop()
         if curr in expanded:
             continue
         elif curr.name=='g':
-            AstarLogGoal(curr)
+            A_Star_log_goal(curr)
             return
         
+        # expand...
         time += 1
         children = graph.get_children(curr)
         for child in children:
             path_distance = curr.path_distance + float(graph.edges[curr][child])
             child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time, path_distance=path_distance)
             frontier.add(child_node)
-        
-        frontier.frontier.sort(key=lambda node: (float(node.estimation)+node.path_distance, node.time_added), reverse=True)
 
         expanded.add(curr)
 
-        AstarLogs(curr, expanded, children, frontier)
+        # sort the frontier...
+        frontier.frontier.sort(key=lambda node: (float(node.estimation)+node.path_distance, node.time_added), reverse=True)
 
+        A_star_logs(curr, expanded, children, frontier)
 
 def solve():
+    '''
+    * main def
+    * builds the graph reading the input file
+    * calls the selected method to find the solution
+    '''
     graph = Graph()
     if len(sys.argv)!=2:
         sys.exit('Usage: python3 search.py <filename>') 
