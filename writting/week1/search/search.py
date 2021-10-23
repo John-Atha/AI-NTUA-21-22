@@ -1,12 +1,12 @@
 import sys
 
 class Node():
-    def __init__(self, name, parent=None, estimation=0, time_added=0, path_distance=0):
+    def __init__(self, name, parent=None, estimation=0., time_added=0, path_distance=0.):
         self.name = name
         self.parent = parent
-        self.estimation = estimation
+        self.estimation = float(estimation)
         self.time_added = time_added
-        self.path_distance = path_distance
+        self.path_distance = float(path_distance)
     
     def __eq__(self, other):
         return isinstance(other, Node) and self.name == other.name
@@ -50,10 +50,10 @@ class Graph():
     
     def add_edge(self, u, v, weight):
         if self.edges.get(u):
-            self.edges[u][v] = weight    
+            self.edges[u][v] = float(weight)    
         else:
             self.edges[u] = dict()
-            self.edges[u][v] = weight    
+            self.edges[u][v] = float(weight)    
 
     def add_node(self, u):
         if u not in self.nodes:
@@ -151,7 +151,7 @@ def hill_climbing_main(graph):
         children = graph.get_children(best_node)
         if (len(children)):
             for child in children:
-                if float(child.estimation) < float(best_node.estimation):
+                if child.estimation < best_node.estimation:
                     best_node = child
         
         visited.add(prev.name)
@@ -228,7 +228,6 @@ def best_first(graph):
         for child in children:
             child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time)
             frontier.add(child_node)
-        
         expanded.add(curr)
 
         # sort the frontier...
@@ -287,14 +286,25 @@ def Astar(graph):
         time += 1
         children = graph.get_children(curr)
         for child in children:
-            path_distance = curr.path_distance + float(graph.edges[curr][child])
-            child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time, path_distance=path_distance)
-            frontier.add(child_node)
-
+            path_distance = curr.path_distance + graph.edges[curr][child]
+            
+            # if the node is already in the frontier with a worse value, remove it and add the new one
+            # if the node is already in the frontier with a better value, do not add the new one (prunning)
+            added_with_better_distance = False
+            for node in frontier.frontier:
+                if node.name==child.name and float(node.estimation)+node.path_distance>float(child.estimation)+path_distance:
+                    frontier.frontier.remove(node)
+                if node.name==child.name and float(node.estimation)+node.path_distance>float(child.estimation)+path_distance:
+                    added_with_better_distance = True
+                    break
+            if not added_with_better_distance:
+                child_node = Node(name=child.name, estimation=child.estimation, parent=curr, time_added=time)
+                frontier.add(child_node)
+            
         expanded.add(curr)
 
         # sort the frontier...
-        frontier.frontier.sort(key=lambda node: (float(node.estimation)+node.path_distance, node.time_added), reverse=True)
+        frontier.frontier.sort(key=lambda node: (node.estimation+node.path_distance, node.time_added), reverse=True)
 
         A_star_logs(curr, expanded, children, frontier)
 
