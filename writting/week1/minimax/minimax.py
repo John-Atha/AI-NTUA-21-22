@@ -1,7 +1,7 @@
 import sys
 import copy
 
-def flatten(l):
+def flatten_2d(l):
     return [item for sublist in l for item in sublist]
 
 def get_id_from_node_str(node):
@@ -44,18 +44,22 @@ class Node():
     
     def __hash__(self):
         return hash(self.id)
-    
-    def children_str(self):
-        return [f"{child.kind}-{child.id}-{child.value}" for child in self.children]
 
     def __str__(self):
         return f"{self.kind}-id:{self.id}-value:{self.value}-time:{self.time}"
 
 def init(filename):
+    
+    '''
+    * reads data from `filename` file
+    * returns a dictionary of all `Node` objects
+    '''
 
     with open(filename) as f:
         contents = f.read()
         contents = contents.splitlines()
+
+        # split node to lists by level and add ids
         levels = dict()
         level_index = 0
         id = 1
@@ -70,22 +74,17 @@ def init(filename):
                 line_with_ids[i] = family
             levels[level_index] = line_with_ids
             level_index += 1
-        # print(levels)
-        # print('----------------------------')
         
+        # parse levels dict() and add Node objects to nodes dict()
         nodes = dict()
         root_str = levels[0][0][0]
-        # print(root_str)
         root = build_node_from_node_str(root_str)
         nodes[1] = root
         for level in levels:
             if level>0:
-                # print(levels[level])
                 for family in levels[level]:
-                    parent_level = flatten(levels[level-1])
+                    parent_level = flatten_2d(levels[level-1])
                     parent_str = parent_level[levels[level].index(family)]
-                    # print(parent_level)
-                    # print(family, 'from: ', parent_str)
                     parent_id = get_id_from_node_str(parent_str)
                     for node in family:
                         u = build_node_from_node_str(node)
@@ -95,10 +94,20 @@ def init(filename):
 
 def minimax(nodes, AB=False):
     
+    '''
+    * executes the `minimax` algorithm with/without AB pruning depending on the corresponding flag
+    * logs the nodes `visited`, their `values`, their `order` and the `non-visited` nodes
+    '''
+
     print(f"I am minimax with{'out' if not AB else ''} AB pruning")
     time = 1
 
     def logs(nodes):
+        
+        '''
+        * uses the `nodes` dictionary
+        * logs the `output` messages
+        '''
         unvisited = [node for node in nodes if nodes[node].time==0]
         visited = [nodes[node] for node in nodes if nodes[node].time!=0]
         visited.sort(key=lambda node:node.time)
@@ -107,13 +116,18 @@ def minimax(nodes, AB=False):
         print(" * Nodes visited:")
         i=1
         for node in visited[:-1]:
-            print(f"\t node {node.id}: {node.value} ->", end='\n' if i%5==0 else '')
+            print(f"\t u{node.id}: {node.value}->", end='\n' if i%5==0 else '')
             i += 1
-        print(f"\t node {visited[len(visited)-1].id}: {visited[len(visited)-1].value}")
+        print(f"\t u{visited[len(visited)-1].id}: {visited[len(visited)-1].value}")
         print("  * Not visited nodes:")
         print(f"\t {unvisited}")
 
     def maxValue(node, mini_till_now):
+        
+        '''
+        * the max-value method used by the `maximizing nodes`
+        '''
+        
         nonlocal AB
         nonlocal time
         node.time = time
@@ -123,7 +137,7 @@ def minimax(nodes, AB=False):
             return node.value
 
         elif node.kind == 'mini':
-            raise Exception("Called max-value function for mini node.")
+            raise Exception("Called max-value method for mini node.")
         
         val = float('-inf')
         for child in node.children:
@@ -135,6 +149,11 @@ def minimax(nodes, AB=False):
         return val
 
     def minValue(node, maxi_till_now):
+                
+        '''
+        * the min-value method used by the `minimizing nodes`
+        '''
+        
         nonlocal AB
         nonlocal time
         node.time = time
@@ -144,7 +163,7 @@ def minimax(nodes, AB=False):
             return node.value
 
         elif node.kind == 'maxi':
-            raise Exception("Called min-value function for maxi node.")
+            raise Exception("Called min-value method for maxi node.")
 
         val = float('inf')
         for child in node.children:
@@ -161,6 +180,12 @@ def minimax(nodes, AB=False):
     logs(nodes)
 
 def with_AB(nodes):
+
+    '''
+    * uses the `minimax` method to execute the algo using `AB pruning`
+    * applies some assertions for the certain problem
+    '''
+    
     minimax(nodes, True)
     assert nodes[1].value == 5     and nodes[1].time == 1
     assert nodes[2].value == 3     and nodes[2].time == 2
@@ -213,6 +238,12 @@ def with_AB(nodes):
     assert nodes[49].value == 8    and nodes[49].time == 0
 
 def without_AB(nodes):
+
+    '''
+    * uses the `minimax` method to execute the algo `without` using `AB pruning`
+    * applies some assertions for the certain problem
+    '''
+    
     minimax(nodes, False)
     assert nodes[1].value == 5   and nodes[1].time == 1
     assert nodes[2].value == 3   and nodes[2].time == 2
@@ -267,6 +298,13 @@ def without_AB(nodes):
 
 def main():
 
+    '''
+    * the main method
+    * uses the previously declared methods and classes
+    * reads the data from a txt file
+    * solves with and without AB pruning
+    '''
+    
     if len(sys.argv) != 2:
         sys.exit("Usage: python3 minimax.py input.txt")
     
