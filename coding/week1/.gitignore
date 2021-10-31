@@ -1,1 +1,4 @@
 maze.py
+*.gif
+*DRAFT*
+.ipynb_checkp*
