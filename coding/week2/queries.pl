@@ -127,18 +127,6 @@ min(A, B, C) :-
 % -----
 
 
-% --- language ----
-    common_language(Movie1, Movie2):-
-        language(Movie1, Lang),
-        language(Movie2, Lang),
-        Movie1 \= Movie2.
-
-    all_with_common_language(Movie1, Bag):-
-        findall(Other, common_language(Movie1, Other), Bag).
-
-% --------
-
-
 % --- plot keywords ----
 
     /*
@@ -196,15 +184,25 @@ min(A, B, C) :-
 % -------------
 
 
-% --- country ----
-    have_same_country(Movie1, Movie2) :-
+% --- production_country ----
+    have_same_production_country(Movie1, Movie2) :-
         production_country(Movie1, Country),
         production_country(Movie2, Country),
         Movie1 \= Movie2.
 
+    all_with_same_production_country(Movie1, Movies) :-
+        findall(Movie, have_same_production_country(Movie1, Movie), Movies).
+% -----------------
+
+% --- country -----
+    have_same_country(Movie1, Movie2) :-
+        country(Movie1, Country),
+        country(Movie2, Country),
+        Movie1 \= Movie2.
+
     all_with_same_country(Movie1, Movies) :-
         findall(Movie, have_same_country(Movie1, Movie), Movies).
-% -----------------
+% -------------
 
 % --- company ---- 
     have_same_company(Movie1, Movie2) :-
@@ -239,6 +237,8 @@ min(A, B, C) :-
     
     all_with_close_popularity(Movie1, Movies) :-
         findall(Movie, have_close_popularity(Movie, Movie1), Movies).
+
+% ------------
 
 % --- release date ----
     release_year(Movie1, Year) :-
@@ -282,4 +282,100 @@ min(A, B, C) :-
     all_with_close_gross(Movie1, Movies) :-
         findall(Movie, have_close_gross(Movie, Movie1), Movies).
 
-% --- language check again TODO...
+% ------------
+
+% --- language ----
+    common_language(Movie1, Movie2):-
+        language(Movie1, Lang),
+        language(Movie2, Lang),
+        Movie1 \= Movie2.
+
+    all_with_common_language(Movie1, Bag):-
+        findall(Other, common_language(Movie1, Other), Bag).
+
+% --------
+
+% --- spoken_languages ----
+
+    have_common_spoken_language(Movie1, Movie2) :-
+        spoken_languages(Movie1, Lang1),
+        spoken_languages(Movie2, Lang1),
+        Movie1 \= Movie2.
+
+    all_with_common_spoken_language(Movie1, Movies) :-
+        findall(Movie, have_common_spoken_language(Movie1, Movie), Movies).
+
+% --------
+
+% --- status ----
+    have_same_status(Movie1, Movie2) :-
+        status(Movie1, Status1),
+        status(Movie2, Status1),
+        Movie1 \=Movie2.
+
+% --------
+
+% --- movie_title ----
+
+    have_close_title(Movie1, Movie2) :-
+        movie_title(Movie1, Title1),
+        movie_title(Movie2, Title2),
+        sub_string(Title1, _, 6, _, Sub1),
+        sub_string(Title2, _, 6, _, Sub1),
+        not(sub_string(Sub1, _, _, _, 'and')),
+        not(sub_string(Sub1, _, _, _, 'ing')),
+        Movie1 \= Movie2.
+
+    all_with_close_title(Movie1, Movies) :-
+        setof(Movie, have_close_title(Movie1, Movie), Movies).
+
+% --------
+
+% --- tagline ----
+
+have_close_tagline(Movie1, Movie2) :-
+    tagline(Movie1, Title1),
+    tagline(Movie2, Title2),
+    sub_string(Title1, _, 8, _, Sub1),
+    sub_string(Title2, _, 8, _, Sub1),
+    not(sub_string(Sub1, _, _, _, 'and')),
+    not(sub_string(Sub1, _, _, _, 'ing')),
+    Movie1 \= Movie2.
+
+all_with_close_tagline(Movie1, Movies) :-
+    setof(Movie, have_close_tagline(Movie1, Movie), Movies).
+
+% --------
+
+% --- vote_average  (bearing in mind the num_voted_users) ----
+
+    have_close_vote_average(Movie1, Movie2) :-
+        vote_average(Movie1, Average1),
+        vote_average(Movie2, Average2),
+        number_string(Av1, Average1),
+        number_string(Av2, Average2),
+        num_voted_users(Movie1, Users1),
+        num_voted_users(Movie2, Users2),
+        number_string(Us1, Users1),
+        number_string(Us2, Users2),      
+        0.95*Av1 =< Av2, Av2 =< 1.15*Av1,
+        0.95*Us1 =< Us2,
+        Movie1 \= Movie2.    
+
+    all_with_close_vote_average(Movie1, Movies) :-
+        findall(Movie, have_close_vote_average(Movie1, Movie), Movies).
+
+% --------
+
+% --- duration -----
+    have_close_duration(Movie1, Movie2) :-
+        duration(Movie1, Duration1),
+        duration(Movie2, Duration2),
+        number_string(Dur1, Duration1),
+        number_string(Dur2, Duration2),
+        0.95*Dur1 =< Dur2, Dur2 =< 1.15*Dur1,
+        Movie1 \= Movie2.
+
+    all_with_close_duration(Movie1, Movies) :-
+        findall(Movie, have_close_duration(Movie1, Movie), Movies).
+% --------
