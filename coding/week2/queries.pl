@@ -5,8 +5,10 @@ min(A, B, C) :-
     A>=B -> C is B; C is A.
 
 % ----- directors ------
-    common_director(X, Y) :-
-        director_name(X, D), director_name(Y, D), X \= Y.
+    have_common_director(X, Y) :-
+        director_name(X, D),
+        director_name(Y, D),
+        X \= Y.
 
     all_with_common_director(Movie1, Movies) :-
         findall(Movie, common_director(Movie1, Movie), Movies).
@@ -218,8 +220,8 @@ min(A, B, C) :-
         Movie1 \= Movie2,
         number_string(B1, Budget1),
         number_string(B2, Budget2),           
-        0.8 * B1 < B2,
-        B2 < 1.2 * B1.
+        0.5 * B1 < B2,
+        B2 < 2 * B1.
 
     all_with_close_budget(Movie1, Movies) :-
         findall(Movie, have_close_budget(Movie1, Movie), Movies).
@@ -285,7 +287,7 @@ min(A, B, C) :-
 % ------------
 
 % --- language ----
-    common_language(Movie1, Movie2):-
+    have_common_language(Movie1, Movie2):-
         language(Movie1, Lang),
         language(Movie2, Lang),
         Movie1 \= Movie2.
@@ -318,12 +320,13 @@ min(A, B, C) :-
 % --- movie_title ----
 
     have_close_title(Movie1, Movie2) :-
-        movie_title(Movie1, Title1),
-        movie_title(Movie2, Title2),
-        sub_string(Title1, _, 6, _, Sub1),
-        sub_string(Title2, _, 6, _, Sub1),
+        sub_string(Movie1, _, 7, _, Sub1),
+        sub_string(Movie2, _, 7, _, Sub1),
         not(sub_string(Sub1, _, _, _, 'and')),
         not(sub_string(Sub1, _, _, _, 'ing')),
+        not(sub_string(Sub1, _, _, _, 'of')),
+        not(sub_string(Sub1, _, _, _, 'the')),
+
         Movie1 \= Movie2.
 
     all_with_close_title(Movie1, Movies) :-
@@ -333,17 +336,17 @@ min(A, B, C) :-
 
 % --- tagline ----
 
-have_close_tagline(Movie1, Movie2) :-
-    tagline(Movie1, Title1),
-    tagline(Movie2, Title2),
-    sub_string(Title1, _, 8, _, Sub1),
-    sub_string(Title2, _, 8, _, Sub1),
-    not(sub_string(Sub1, _, _, _, 'and')),
-    not(sub_string(Sub1, _, _, _, 'ing')),
-    Movie1 \= Movie2.
+    have_close_tagline(Movie1, Movie2) :-
+        tagline(Movie1, Title1),
+        tagline(Movie2, Title2),
+        sub_string(Title1, _, 5, _, Sub1),
+        sub_string(Title2, _, 5, _, Sub1),
+        not(sub_string(Sub1, _, _, _, 'and')),
+        not(sub_string(Sub1, _, _, _, 'ing')),
+        Movie1 \= Movie2.
 
-all_with_close_tagline(Movie1, Movies) :-
-    setof(Movie, have_close_tagline(Movie1, Movie), Movies).
+    all_with_close_tagline(Movie1, Movies) :-
+        setof(Movie, have_close_tagline(Movie1, Movie), Movies).
 
 % --------
 
@@ -354,12 +357,12 @@ all_with_close_tagline(Movie1, Movies) :-
         vote_average(Movie2, Average2),
         number_string(Av1, Average1),
         number_string(Av2, Average2),
-        num_voted_users(Movie1, Users1),
-        num_voted_users(Movie2, Users2),
-        number_string(Us1, Users1),
-        number_string(Us2, Users2),      
+        %num_voted_users(Movie1, Users1),
+        %num_voted_users(Movie2, Users2),
+        %number_string(Us1, Users1),
+        %number_string(Us2, Users2),      
         0.95*Av1 =< Av2, Av2 =< 1.15*Av1,
-        0.95*Us1 =< Us2,
+        %0.5*Us1 =< Us2,
         Movie1 \= Movie2.    
 
     all_with_close_vote_average(Movie1, Movies) :-
