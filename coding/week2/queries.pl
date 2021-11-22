@@ -15,9 +15,9 @@
         actor_2_name(Movie1, Actor2),
         actor_3_name(Movie1, Actor3),
         Movie1 \= Movie2,
-        (actor_of(Movie2, Actor1),actor_of(Movie2, Actor2));
-        (actor_of(Movie2, Actor1),actor_of(Movie2, Actor3));
-        (actor_of(Movie2, Actor2),actor_of(Movie2, Actor3)).
+        (actor_of(Movie2, Actor1),actor_of(Movie2, Actor2);
+        actor_of(Movie2, Actor1),actor_of(Movie2, Actor3);
+        actor_of(Movie2, Actor2),actor_of(Movie2, Actor3)).
 
     have_one_common_actor(Movie1, Movie2) :-
         actor_of(Movie1, Actor),
