@@ -1,17 +1,10 @@
-% finds around 100-150 recommendations
 find_sim_1(X, Y) :-
     have_close_keywords_genres(X, Y),
-    have_same_people_or_high_votes(X, Y),
     X \= Y.
 
-% finds around 60-70 recommendations
 find_sim_2(X, Y) :-
     find_sim_1(X, Y),
-    distinct(
-        have_close_duration(X, Y);
-        have_same_company(X, Y);
-        have_same_release_decade(X, Y)
-    ).
+    have_same_people_or_high_votes(X, Y).
 
 % finds around 30-60 recommendations
 find_sim_3(X, Y) :-

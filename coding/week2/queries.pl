@@ -40,17 +40,16 @@
         genre(Movie2, G1),
         genre(Movie2, G2),
         genre(Movie2, G3),
-        G1 \= G2,
-        G2 \= G3,
-        G3 \= G1.
-
+        G1 @< G2,
+        G2 @< G3.
+    
     have_two_common_genres(Movie1, Movie2) :-
         genre(Movie1, G1),
         genre(Movie1, G2),
         genre(Movie2, G1),
         genre(Movie2, G2),
         Movie1 \= Movie2,
-        G1 \= G2.
+        G1 @< G2.
 
     have_one_common_genre(Movie1, Movie2) :-
         genre(Movie1, G1),
@@ -65,9 +64,8 @@
         plot_keyword(Movie2, Word2),
         plot_keyword(Movie2, Word3),
         Movie1 \= Movie2,
-        Word1 \= Word2,
-        Word2 \= Word3,
-        Word1 \= Word3.
+        Word1 @< Word2,
+        Word2 @< Word3.
 
     have_two_common_keywords(Movie1, Movie2) :-
         plot_keyword(Movie1, Word1),
@@ -75,7 +73,7 @@
         plot_keyword(Movie2, Word1),
         plot_keyword(Movie2, Word2),
         Movie1 \= Movie2,
-        Word1 \= Word2.
+        Word1 @< Word2.
 
     have_one_common_keyword(Movie1, Movie2):-
         plot_keyword(Movie1, Word),
